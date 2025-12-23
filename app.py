@@ -1,63 +1,67 @@
 import streamlit as st
-import numpy as np
 import pickle
+import numpy as np
 from PIL import Image
 
-st.set_page_config(page_title="German Traffic Sign Recognition")
+# --------------------------------------------------
+# Load the trained model (EXACT filename)
+# --------------------------------------------------
+MODEL_PATH = "model_comparison_results (1).pkl"
 
-st.title("🚦 German Traffic Sign Recognition System")
-
-# Load model
 @st.cache_resource
 def load_model():
-    with open("model_comparison_results.pkl", "rb") as f:
-        return pickle.load(f)
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    return model
 
 model = load_model()
 
-# GTSRB class names (OFFICIAL)
+# --------------------------------------------------
+# GTSRB class labels (43 classes)
+# --------------------------------------------------
 CLASS_NAMES = [
-    "Speed limit (20km/h)", "Speed limit (30km/h)", "Speed limit (50km/h)",
-    "Speed limit (60km/h)", "Speed limit (70km/h)", "Speed limit (80km/h)",
-    "End of speed limit (80km/h)", "Speed limit (100km/h)", "Speed limit (120km/h)",
-    "No passing", "No passing for vehicles over 3.5 metric tons",
-    "Right-of-way at the next intersection", "Priority road", "Yield",
-    "Stop", "No vehicles", "Vehicles over 3.5 metric tons prohibited",
-    "No entry", "General caution", "Dangerous curve to the left",
-    "Dangerous curve to the right", "Double curve", "Bumpy road",
+    "Speed limit 20", "Speed limit 30", "Speed limit 50", "Speed limit 60",
+    "Speed limit 70", "Speed limit 80", "End of speed limit 80",
+    "Speed limit 100", "Speed limit 120", "No passing",
+    "No passing for vehicles over 3.5 t",
+    "Right-of-way at the next intersection", "Priority road",
+    "Yield", "Stop", "No vehicles",
+    "Vehicles over 3.5 t prohibited", "No entry",
+    "General caution", "Dangerous curve left",
+    "Dangerous curve right", "Double curve", "Bumpy road",
     "Slippery road", "Road narrows on the right", "Road work",
     "Traffic signals", "Pedestrians", "Children crossing",
-    "Bicycles crossing", "Beware of ice/snow", "Wild animals crossing",
+    "Bicycles crossing", "Beware of ice/snow", "Wild animals",
     "End of all speed and passing limits", "Turn right ahead",
     "Turn left ahead", "Ahead only", "Go straight or right",
     "Go straight or left", "Keep right", "Keep left",
     "Roundabout mandatory", "End of no passing",
-    "End of no passing by vehicles over 3.5 metric tons"
+    "End of no passing by vehicles over 3.5 t"
 ]
 
-IMG_SIZE = 32
+# --------------------------------------------------
+# Streamlit UI
+# --------------------------------------------------
+st.set_page_config(page_title="GTSRB Traffic Sign Classifier", layout="centered")
 
-def preprocess_image(img):
-    img = img.resize((IMG_SIZE, IMG_SIZE))
-    img = np.array(img) / 255.0
-    img = img.flatten().reshape(1, -1)
-    return img
+st.title("🚦 German Traffic Sign Recognition")
+st.write("Upload a traffic sign image to predict its class.")
 
 uploaded_file = st.file_uploader(
-    "Upload Traffic Sign Image",
-    type=["jpg", "jpeg", "png"]
+    "Upload an image", type=["jpg", "jpeg", "png"]
 )
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", width=250)
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    img = preprocess_image(image)
-    prediction = model.predict(img)
+    # Preprocessing (must match training)
+    img = image.resize((32, 32))
+    img_array = np.array(img) / 255.0
+    img_array = img_array.reshape(1, -1)  # flatten
+
+    # Prediction
+    prediction = model.predict(img_array)
     class_id = int(prediction[0])
 
-    st.success(f"**Prediction:** {CLASS_NAMES[class_id]}")
-
-    if hasattr(model, "predict_proba"):
-        confidence = np.max(model.predict_proba(img)) * 100
-        st.info(f"**Confidence:** {confidence:.2f}%")
+    st.success(f"✅ Predicted Sign: **{CLASS_NAMES[class_id]}**")
