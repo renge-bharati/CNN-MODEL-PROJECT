@@ -1,6 +1,6 @@
-
 streamlit
-scikit-learn
 numpy
 pandas
-Pillow
+scikit-learn
+pillow
+tensorflow-cpu==2.15.0
